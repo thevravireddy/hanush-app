@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+pandas
+yfinance
+pydantic
+pydantic-settings
+requests
+redis
+python-dotenv
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+openpyxl

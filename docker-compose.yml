@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis
+      - GOOGLE_SHEET_ID=${GOOGLE_SHEET_ID}
+      - EXCEL_PATH=/app/data/trading_bull.xlsx
+    depends_on:
+      - redis
+    volumes:
+      - "C:/Users/thevr/Downloads/trading bull.xlsx:/app/data/trading_bull.xlsx"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
