@@ -10,7 +10,7 @@ import calendar
 # Placeholder for Google Sheets integration
 # In a real scenario, you'd use google-api-python-client
 def fetch_from_excel(category: str) -> List[Dict]:
-    excel_path = os.getenv("EXCEL_PATH", "/app/data/trading_bull.xlsx")
+    excel_path = os.getenv("EXCEL_PATH", "/backend/data/trading_bull.xlsx")
     # Map friendly names to actual tab names in 'trading bull.xlsx'
     sheet_map = {
         "Momentum": "Momentum",
