@@ -44,14 +44,19 @@ const Sidebar: React.FC<SidebarProps> = ({ activeCategory, setActiveCategory, st
     {
       title: 'Derivative Demand',
       items: [
-        { name: 'Aggressive Call', icon: '🟢' },
-        { name: 'Aggressive Put', icon: '🔴' },
+        { name: 'Aggressive Call Option Stocks', icon: '🟢' },
+        { name: 'Aggressive Put Option Stocks', icon: '🔴' },
       ]
     },
     {
-      title: 'Account',
+      title: 'Support',
       items: [
         { name: 'Guide', icon: '📚' },
+      ]
+    },
+    {
+      title: 'System',
+      items: [
         { name: 'Profile / Settings', icon: '👤' },
       ]
     }
@@ -60,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeCategory, setActiveCategory, st
   return (
     <div className="sidebar">
       <div className="sidebar-logo">
-        <img src="/assets/bull_logo.png" alt="Logo" />
+        <img src="/assets/bull_logo.png" alt="Logo" style={{ borderRadius: '8px' }} />
         <h1>BullsEye Quant</h1>
       </div>
 

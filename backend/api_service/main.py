@@ -62,13 +62,9 @@ async def get_stocks(category: str):
         except Exception as e:
             logger.error(f"Fetch failed: {e}")
 
-        # 4. Emergency Fallback
-        logger.warning("Using hardcoded fallback")
-        fallback = [
-            {"rank": 1, "symbol": "SHRIRAMFIN", "sector": "Financial Services", "score": 100, "return_3m": 5.65, "return_6m": 87.61},
-            {"rank": 2, "symbol": "VEDL", "sector": "Metals & Mining", "score": 86, "return_3m": 18.58, "return_6m": 87.61}
-        ]
-        return StockListResponse(category=category, stocks=fallback)
+        # 4. Emergency Fallback (Empty if everything else fails)
+        logger.warning(f"No data found for category: {category} in Excel or Google Sheets.")
+        return StockListResponse(category=category, stocks=[])
 
     except Exception as e:
         logger.critical(f"Critical failure in get_stocks: {e}", exc_info=True)

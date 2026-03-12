@@ -11,16 +11,16 @@ import calendar
 # In a real scenario, you'd use google-api-python-client
 def fetch_from_excel(category: str) -> List[Dict]:
     excel_path = os.getenv("EXCEL_PATH", "/app/data/trading_bull.xlsx")
-    # Map friendly names to tab names
+    # Map friendly names to actual tab names in 'trading bull.xlsx'
     sheet_map = {
         "Momentum": "Momentum",
-        "Low Vol": "Low Vol",
+        "Low Vol": "Low_vol",
         "Value": "Value",
         "Quality": "Quality",
-        "Trending Upside": "Trending Upside Stocks",
-        "Trending Downside": "Trending Downside Stocks",
-        "Aggressive Call": "Aggressive Call Option Stocks",
-        "Aggressive Put": "Aggressive Put Option Stocks"
+        "Trending Upside": "Technical_analysis_upside",
+        "Trending Downside": "Technical_analysis_downside",
+        "Aggressive Call Option Stocks": "Derivaties_trading_ce",
+        "Aggressive Put Option Stocks": "Derivartives_trading_pe"
     }
     
     sheet_name = sheet_map.get(category, category)
@@ -31,25 +31,34 @@ def fetch_from_excel(category: str) -> List[Dict]:
             return []
             
         df = pd.read_excel(excel_path, sheet_name=sheet_name)
+        print(f"Successfully read sheet '{sheet_name}'. Found {len(df)} rows.")
         stocks = []
+        
+        def get_val(row, keys, default=None):
+            for k in keys:
+                if k in row:
+                    val = row[k]
+                    return val if not pd.isna(val) else default
+            return default
+
         for i, row in df.iterrows():
-            # Robust mapping for potential column name variations
-            symbol = row.get("Symbol") or row.get("SYMBOL") or row.get("symbol")
-            if pd.isna(symbol): continue
+            symbol = get_val(row, ["Symbol", "SYMBOL", "symbol"])
+            if symbol is None: continue
             
-            sector = row.get("Sector") or row.get("SECTOR") or row.get("sector") or "N/A"
-            score = row.get("Score") or row.get("SCORE") or row.get("score") or 0
-            ret3m = row.get("3M Return") or row.get("3M RETURN") or row.get("return_3m") or 0
-            ret6m = row.get("6M Return") or row.get("6M RETURN") or row.get("return_6m") or 0
+            sector = get_val(row, ["Sector", "SECTOR", "sector"], "N/A")
+            score = get_val(row, ["Score", "SCORE", "score"], 0)
+            ret3m = get_val(row, ["3M Return", "3M RETURN", "return_3m", "3m_return", "3M return"], 0)
+            ret6m = get_val(row, ["6M Return", "6M RETURN", "return_6m", "6m_return", "6M return"], 0)
             
             stocks.append({
                 "rank": i + 1,
                 "symbol": str(symbol),
                 "sector": str(sector),
-                "score": int(score) if not pd.isna(score) else 0,
-                "return_3m": float(ret3m) if not pd.isna(ret3m) else 0.0,
-                "return_6m": float(ret6m) if not pd.isna(ret6m) else 0.0
+                "score": int(score),
+                "return_3m": float(ret3m),
+                "return_6m": float(ret6m)
             })
+        print(f"Mapped {len(stocks)} valid stock records for {category}")
         return stocks
     except Exception as e:
         print(f"Error reading Excel {excel_path} sheet {sheet_name}: {e}")
