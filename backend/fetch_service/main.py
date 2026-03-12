@@ -12,7 +12,12 @@ import calendar
 def fetch_from_excel(category: str) -> List[Dict]:
     #excel_path = os.getenv("EXCEL_PATH", "/backend/data/trading_bull.xlsx")
 
-    excel_path = os.getenv("EXCEL_PATH", "backend/data/trading_bull.xlsx") # relative path, as render deploys it in separate folder
+    base_dir = Path(__file__).resolve().parent.parent  # points to backend/
+    default_path = base_dir / "data" / "trading_bull.xlsx"
+    excel_path = Path(os.getenv("EXCEL_PATH", str(default_path)))
+
+    print("excel path is: ", excel_path)
+    #excel_path = os.getenv("EXCEL_PATH", "backend/data/trading_bull.xlsx") # relative path, as render deploys it in separate folder
 
     # Map friendly names to actual tab names in 'trading bull.xlsx'
     sheet_map = {
