@@ -8,7 +8,7 @@ import { fetchStocksByCategory, type Stock } from "./services/api";
 import Auth from "./pages/Auth"; // <-- new auth page
 
 // ProtectedRoute wrapper
-const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
+const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const token = localStorage.getItem("token");
   if (!token) {
     return <Navigate to="/auth" replace />;
