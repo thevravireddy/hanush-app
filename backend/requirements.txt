@@ -15,6 +15,6 @@ openpyxl
 fastapi
 sqlalchemy
 psycopg2-binary
-passlib[bcrypt]
+bcrypt
 python-jose[cryptography]
 alembic
