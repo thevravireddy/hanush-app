@@ -6,11 +6,16 @@ from fetch_service.main import DataService, fetch_from_google_sheets, fetch_hist
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import logging
+from backend.api_service import auth_routes
+from backend.db import Base, engine
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(title="Trading Bible API")
+app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
 
 # Enable CORS for frontend
 app.add_middleware(
