@@ -57,42 +57,45 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) => {
                     } else {
                         timestamp = time;
                     }
-                    const date = new Date(timestamp * 1000);
-
+                
+                    // ✅ Always convert to IST for display
+                    const istDate = new Date(timestamp * 1000 + 5.5 * 60 * 60 * 1000);
+                
                     if (interval === '5m' || interval === '15m' || interval === '1h') {
-                        const hours = date.getUTCHours().toString().padStart(2, '0');
-                        const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-                        // Show date label at start of day (9:15 AM IST = 03:45 UTC)
-                        if (hours === '03' && minutes === '45') {
-                            const day = date.getUTCDate().toString().padStart(2, '0');
+                        const hours = istDate.getUTCHours().toString().padStart(2, '0');
+                        const minutes = istDate.getUTCMinutes().toString().padStart(2, '0');
+                
+                        // Show date at 9:15 AM IST (market open)
+                        if (hours === '09' && minutes === '15') {
+                            const day = istDate.getUTCDate().toString().padStart(2, '0');
                             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                            const month = monthNames[date.getUTCMonth()];
+                            const month = monthNames[istDate.getUTCMonth()];
                             return `${month} ${day}`;
                         }
                         return `${hours}:${minutes}`;
-
+                
                     } else if (interval === '1d') {
-                        const day = date.getDate();
+                        const day = istDate.getUTCDate();
                         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                        const month = monthNames[date.getMonth()];
-                        const year = date.getFullYear();
+                        const month = monthNames[istDate.getUTCMonth()];
+                        const year = istDate.getUTCFullYear();
                         if (day === 1) return `${month} ${year}`;
                         return day.toString();
-
+                
                     } else if (interval === '1wk') {
-                        const day = date.getDate();
+                        const day = istDate.getUTCDate();
                         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                        const month = monthNames[date.getMonth()];
+                        const month = monthNames[istDate.getUTCMonth()];
                         return `${month} ${day}`;
-
+                
                     } else {
                         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                        const month = monthNames[date.getMonth()];
-                        const year = date.getFullYear();
+                        const month = monthNames[istDate.getUTCMonth()];
+                        const year = istDate.getUTCFullYear();
                         return `${month} ${year}`;
                     }
                 },
