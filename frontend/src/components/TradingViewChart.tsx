@@ -31,7 +31,6 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) => {
             }
         };
 
-        // Determine if interval is intraday
         const isIntraday = interval === '5m' || interval === '15m' || interval === '1h';
 
         const chart = createChart(chartContainerRef.current, {
@@ -46,66 +45,51 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) => {
             width: chartContainerRef.current.clientWidth,
             height: 600,
             timeScale: {
-                // ✅ FIX: Show time for intraday, hide for daily+
                 timeVisible: isIntraday,
                 secondsVisible: false,
                 borderColor: '#2B2B43',
                 visible: true,
                 minBarSpacing: 0.5,
-                // ✅ FIX: TradingView-style tick formatting
                 tickMarkFormatter: (time: number | string) => {
-                    // Handle both timestamp (number) and date string formats
                     let timestamp: number;
-                    
                     if (typeof time === 'string') {
-                        // Parse date string like "2024-03-11"
                         timestamp = new Date(time).getTime() / 1000;
                     } else {
                         timestamp = time;
                     }
-                    
                     const date = new Date(timestamp * 1000);
-                    
+
                     if (interval === '5m' || interval === '15m' || interval === '1h') {
-                        // Intraday: Show time, only show date at day boundary
-                        const hours = date.getHours().toString().padStart(2, '0');
-                        const minutes = date.getMinutes().toString().padStart(2, '0');
-                        
-                        // Show date only at midnight (00:00)
-                        if (hours === '00' && minutes === '00') {
-                            const day = date.getDate().toString().padStart(2, '0');
-                            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                        const hours = date.getUTCHours().toString().padStart(2, '0');
+                        const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+                        // Show date label at start of day (9:15 AM IST = 03:45 UTC)
+                        if (hours === '03' && minutes === '45') {
+                            const day = date.getUTCDate().toString().padStart(2, '0');
+                            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                            const month = monthNames[date.getMonth()];
+                            const month = monthNames[date.getUTCMonth()];
                             return `${month} ${day}`;
                         }
                         return `${hours}:${minutes}`;
-                        
+
                     } else if (interval === '1d') {
-                        // Daily: Show date, month name at month start
                         const day = date.getDate();
-                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                         const month = monthNames[date.getMonth()];
                         const year = date.getFullYear();
-                        
-                        // Show month name on first day of month
-                        if (day === 1) {
-                            return `${month} ${year}`;
-                        }
+                        if (day === 1) return `${month} ${year}`;
                         return day.toString();
-                        
+
                     } else if (interval === '1wk') {
-                        // Weekly: Show month and day
                         const day = date.getDate();
-                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                         const month = monthNames[date.getMonth()];
                         return `${month} ${day}`;
-                        
+
                     } else {
-                        // Monthly: Show month and year
-                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                         const month = monthNames[date.getMonth()];
                         const year = date.getFullYear();
@@ -133,26 +117,29 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) => {
                 },
             },
             localization: {
-                // ✅ FIX: Crosshair time formatter
                 timeFormatter: (time: number | string) => {
                     let timestamp: number;
-                    
                     if (typeof time === 'string') {
                         timestamp = new Date(time).getTime() / 1000;
                     } else {
                         timestamp = time;
                     }
-                    
                     const date = new Date(timestamp * 1000);
-                    const hours = date.getHours().toString().padStart(2, '0');
-                    const minutes = date.getMinutes().toString().padStart(2, '0');
+
+                    if (interval === '5m' || interval === '15m' || interval === '1h') {
+                        // ✅ Show IST time in crosshair: add 5h30m to UTC
+                        const istDate = new Date(timestamp * 1000 + 5.5 * 60 * 60 * 1000);
+                        const hours = istDate.getUTCHours().toString().padStart(2, '0');
+                        const minutes = istDate.getUTCMinutes().toString().padStart(2, '0');
+                        const day = istDate.getUTCDate().toString().padStart(2, '0');
+                        const month = (istDate.getUTCMonth() + 1).toString().padStart(2, '0');
+                        const year = istDate.getUTCFullYear();
+                        return `${year}-${month}-${day} ${hours}:${minutes} IST`;
+                    }
+
                     const day = date.getDate().toString().padStart(2, '0');
                     const month = (date.getMonth() + 1).toString().padStart(2, '0');
                     const year = date.getFullYear();
-                    
-                    if (interval === '5m' || interval === '15m' || interval === '1h') {
-                        return `${year}-${month}-${day} ${hours}:${minutes}`;
-                    }
                     return `${year}-${month}-${day}`;
                 },
             },
@@ -172,25 +159,21 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) => {
             try {
                 const response = await axios.get(`${API_BASE_URL}/stocks/history/${symbol}?interval=${interval}`);
                 const history = response.data;
-                
+
                 if (history && history.length > 0) {
-                    // ✅ FIX: Handle both timestamp formats (number or string)
                     const processedData = history.map((d: any) => {
                         let time: UTCTimestamp;
-                        
-                        // Check if time is a string (date format) or number (timestamp)
+
                         if (typeof d.time === 'string') {
-                            // Parse string date like "2024-03-11" and convert to timestamp
                             const dateObj = new Date(d.time);
                             time = Math.floor(dateObj.getTime() / 1000) as UTCTimestamp;
                         } else if (typeof d.time === 'number') {
-                            // Already a timestamp
                             time = d.time as UTCTimestamp;
                         } else {
                             console.error('Invalid time format:', d.time);
                             return null;
                         }
-                        
+
                         return {
                             time,
                             open: parseFloat(d.open),
@@ -198,21 +181,17 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) => {
                             low: parseFloat(d.low),
                             close: parseFloat(d.close),
                         };
-                    }).filter(Boolean); // Remove any null entries
+                    }).filter(Boolean);
 
-                    // ✅ FIX: Sort by time
                     const sortedData = processedData.sort((a: any, b: any) => a.time - b.time);
-
-                    console.log('Chart data sample:', sortedData.slice(0, 3)); // Debug log
 
                     candlestickSeries.setData(sortedData);
                     chart.timeScale().fitContent();
-                    
-                    // Force resize to ensure labels render
+
                     setTimeout(() => {
                         if (chartContainerRef.current) {
-                            chart.applyOptions({ 
-                                width: chartContainerRef.current.clientWidth 
+                            chart.applyOptions({
+                                width: chartContainerRef.current.clientWidth
                             });
                         }
                     }, 100);
@@ -232,56 +211,93 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) => {
         };
     }, [symbol, interval]);
 
+    // ✅ Clean display name: strip .NS suffix
+    const displayName = symbol.replace('.NS', '').replace('.BSE', '');
+
     return (
         <div className="chart-wrapper" style={{ width: '100%' }}>
-            <div 
-                className="timeframe-selector" 
-                style={{ 
-                    display: 'flex', 
-                    gap: '10px', 
-                    marginBottom: '15px', 
-                    flexWrap: 'wrap' 
-                }}
-            >
-                {timeframes.map((tf) => (
-                    <button
-                        key={tf.value}
-                        onClick={() => setInterval(tf.value)}
-                        style={{
-                            padding: '8px 16px',
-                            background: interval === tf.value ? '#c5a059' : '#333',
-                            border: interval === tf.value ? '2px solid #c5a059' : '1px solid #555',
-                            borderRadius: '4px',
-                            color: interval === tf.value ? '#000' : '#fff',
-                            cursor: 'pointer',
-                            fontSize: '0.875rem',
-                            fontWeight: interval === tf.value ? 'bold' : 'normal',
-                            transition: 'all 0.2s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                            if (interval !== tf.value) {
-                                e.currentTarget.style.background = '#444';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (interval !== tf.value) {
-                                e.currentTarget.style.background = '#333';
-                            }
-                        }}
-                    >
-                        {tf.label}
-                    </button>
-                ))}
+            {/* ✅ Stock name header */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '12px',
+                flexWrap: 'wrap',
+                gap: '10px',
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{
+                        fontSize: '1.4rem',
+                        fontWeight: 700,
+                        color: '#c5a059',
+                        letterSpacing: '0.05em',
+                    }}>
+                        {displayName}
+                    </span>
+                    <span style={{
+                        fontSize: '0.75rem',
+                        color: '#666',
+                        background: '#1a1a1a',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        border: '1px solid #333',
+                    }}>
+                        NSE
+                    </span>
+                </div>
+
+                {/* Timeframe selector */}
+                <div
+                    className="timeframe-selector"
+                    style={{
+                        display: 'flex',
+                        gap: '8px',
+                        flexWrap: 'wrap',
+                    }}
+                >
+                    {timeframes.map((tf) => (
+                        <button
+                            key={tf.value}
+                            onClick={() => setInterval(tf.value)}
+                            style={{
+                                padding: '6px 14px',
+                                background: interval === tf.value ? '#c5a059' : '#1a1a1a',
+                                border: interval === tf.value ? '2px solid #c5a059' : '1px solid #333',
+                                borderRadius: '4px',
+                                color: interval === tf.value ? '#000' : '#aaa',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                fontWeight: interval === tf.value ? 700 : 400,
+                                transition: 'all 0.2s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                                if (interval !== tf.value) {
+                                    e.currentTarget.style.background = '#2a2a2a';
+                                    e.currentTarget.style.color = '#fff';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (interval !== tf.value) {
+                                    e.currentTarget.style.background = '#1a1a1a';
+                                    e.currentTarget.style.color = '#aaa';
+                                }
+                            }}
+                        >
+                            {tf.label}
+                        </button>
+                    ))}
+                </div>
             </div>
+
             <div
                 ref={chartContainerRef}
-                style={{ 
-                    width: '100%', 
-                    height: '600px', 
-                    borderRadius: '8px', 
+                style={{
+                    width: '100%',
+                    height: '600px',
+                    borderRadius: '8px',
                     overflow: 'hidden',
                     display: 'block',
-                    position: 'relative'
+                    position: 'relative',
                 }}
             />
         </div>
