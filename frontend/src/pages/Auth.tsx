@@ -1,13 +1,14 @@
 // src/pages/Auth.tsx
 import React, { useState } from "react";
 import axios from "axios";
+import api from "../api";
 
 const Auth = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const handleRegister = async () => {
-    await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, {
+    await api.post(`${import.meta.env.VITE_API_URL}/auth/register`, {
       username,
       password,
     });
@@ -15,7 +16,7 @@ const Auth = () => {
   };
 
   const handleLogin = async () => {
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, {
+    const res = await api.post(`${import.meta.env.VITE_API_URL}/auth/login`, {
       username,
       password,
     });
