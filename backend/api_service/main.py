@@ -6,8 +6,8 @@ from fetch_service.main import DataService, fetch_from_google_sheets, fetch_hist
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import logging
-from backend.api_service import auth_routes
-from backend.db import Base, engine
+from api_service import auth_routes
+from db import Base, engine
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
