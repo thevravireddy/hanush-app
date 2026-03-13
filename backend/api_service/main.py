@@ -58,6 +58,22 @@ def list_users(db: Session = Depends(get_db)):
     users = db.query(User).all()
     return [{"id": u.id, "name": u.name, "email": u.email} for u in users]
 
+@app.get("/debug/migrations")
+def check_migrations():
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        version = conn.execute(text("SELECT version_num FROM alembic_version")).fetchone()
+        columns = conn.execute(text("""
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'users'
+        """)).fetchall()
+    return {
+        "alembic_version": version[0] if version else None,
+        "users_columns": [{"name": c[0], "type": c[1]} for c in columns]
+    }
+
+
 @app.get("/stocks/{category}", response_model=StockListResponse)
 async def get_stocks(category: str):
     logger.info(f"Fetching stocks for category: {category}")
