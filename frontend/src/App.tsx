@@ -166,7 +166,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/auth" element={<Auth />} />
         <Route
-          path="/stocks"
+          path="/"
           element={
             <ProtectedRoute>
               <Dashboard />
