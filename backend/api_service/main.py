@@ -1,18 +1,20 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse
 from typing import List, Optional
 from shared.models import StockData, StockListResponse, HistoricalData, StockInfo
 from fetch_service.main import DataService, fetch_from_google_sheets, fetch_historical_data, fetch_stock_info
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 import os
 import logging
 from api_service import auth_routes
-from db import Base, engine
+from db import Base, engine, SessionLocal
+from models import user  # ✅ must be imported before create_all so table is registered
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)  # ✅ now creates users table correctly
 
 app = FastAPI(title="Trading Bible API")
 app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
@@ -26,6 +28,13 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -42,11 +51,17 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 data_service = DataService()
 
+# ✅ Temporary debug endpoint — remove after verifying users table
+@app.get("/debug/users")
+def list_users(db: Session = Depends(get_db)):
+    from models.user import User
+    users = db.query(User).all()
+    return [{"id": u.id, "name": u.name, "email": u.email} for u in users]
+
 @app.get("/stocks/{category}", response_model=StockListResponse)
 async def get_stocks(category: str):
     logger.info(f"Fetching stocks for category: {category}")
     try:
-        # 1. Try Cache
         try:
             cached_data = data_service.get_cached_stock_list(category)
             if cached_data:
@@ -55,32 +70,27 @@ async def get_stocks(category: str):
         except Exception as e:
             logger.warning(f"Cache miss or error: {e}")
 
-        # 2. Try Fetch (Mock for now, eventually Google Sheets)
         try:
             stocks = fetch_from_google_sheets(category)
             if stocks:
-                # 3. Try Cache Write (Async-like and non-blocking if possible, but safe here)
-                try: 
+                try:
                     data_service.cache_stock_list(category, stocks)
                 except: pass
                 return StockListResponse(category=category, stocks=stocks)
         except Exception as e:
             logger.error(f"Fetch failed: {e}")
 
-        # 4. Emergency Fallback (Empty if everything else fails)
         logger.warning(f"No data found for category: {category} in Excel or Google Sheets.")
         return StockListResponse(category=category, stocks=[])
 
     except Exception as e:
         logger.critical(f"Critical failure in get_stocks: {e}", exc_info=True)
-        # Even the fallback failed? Return minimal valid response
         return StockListResponse(category=category, stocks=[])
 
 @app.get("/stocks/history/{symbol}", response_model=List[HistoricalData])
 async def get_history(symbol: str, interval: str = "1d"):
     logger.info(f"Fetching history for symbol: {symbol}, interval: {interval}")
     try:
-        # Try Cache
         cached_data = data_service.get_cached_historical_data(symbol, interval)
         if cached_data:
             return cached_data
@@ -98,7 +108,6 @@ async def get_history(symbol: str, interval: str = "1d"):
 async def get_info(symbol: str):
     logger.info(f"Fetching info for: {symbol}")
     try:
-        # Try Cache
         cached_info = data_service.get_cached_stock_info(symbol)
         if cached_info:
             return cached_info
@@ -107,7 +116,7 @@ async def get_info(symbol: str):
         if info:
             data_service.cache_stock_info(symbol, info)
             return info
-        
+
         raise HTTPException(status_code=404, detail="Stock info not found")
     except Exception as e:
         logger.error(f"Error in get_info: {e}")
