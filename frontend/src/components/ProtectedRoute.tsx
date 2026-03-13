@@ -3,7 +3,7 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 
 interface ProtectedRouteProps {
-  children: JSX.Element;
+  children: React.ReactElement;
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
