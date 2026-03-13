@@ -5,7 +5,7 @@ import StockTable from "./components/StockTable";
 import TradingViewChart from "./components/TradingViewChart";
 import StockStats from "./components/StockStats";
 import { fetchStocksByCategory, type Stock } from "./services/api";
-import Auth from "./pages/Auth"; // <-- new auth page
+import Auth from "./pages/Auth";
 
 // ProtectedRoute wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
@@ -16,7 +16,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
   return children;
 };
 
-// Navbar with login/logout toggle
+// Navbar with logout only (no broken /stocks link)
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -27,13 +27,24 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav style={{ display: "flex", gap: "1rem", padding: "1rem" }}>
-      <a href="/">Home</a>
-      <a href="/stocks">Stocks</a>
+    <nav style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", padding: "1rem" }}>
       {token ? (
-        <button onClick={handleLogout}>Logout</button>
+        <button
+          onClick={handleLogout}
+          style={{
+            background: "transparent",
+            border: "1px solid #FFD700",
+            color: "#FFD700",
+            padding: "6px 16px",
+            borderRadius: 6,
+            cursor: "pointer",
+            fontWeight: 600,
+          }}
+        >
+          Logout
+        </button>
       ) : (
-        <a href="/auth">Login / Register</a>
+        <a href="/auth" style={{ color: "#FFD700" }}>Login / Register</a>
       )}
     </nav>
   );
@@ -99,7 +110,8 @@ const Dashboard: React.FC = () => {
           <div className="glass-card" style={{ padding: "40px", margin: "40px" }}>
             <h2 className="glow-text">User Guide</h2>
             <p style={{ marginTop: "20px", color: "var(--text-dim)", lineHeight: "1.6" }}>
-              Welcome to the BullsEye Quant User Guide. This section will help you understand the various metrics and strategies used in the platform.
+              Welcome to the BullsEye Quant User Guide. This section will help you understand
+              the various metrics and strategies used in the platform.
             </p>
             <ul style={{ marginTop: "20px", color: "var(--text-dim)", paddingLeft: "20px" }}>
               <li><strong>Momentum:</strong> Stocks showing strong price trends.</li>
@@ -115,8 +127,13 @@ const Dashboard: React.FC = () => {
             </p>
             <div style={{ marginTop: "30px" }}>
               <div style={{ marginBottom: "15px" }}>
-                <label style={{ display: "block", marginBottom: "5px", color: "var(--primary-gold)" }}>Theme</label>
-                <select className="glass-card" style={{ background: "#111", color: "#fff", border: "none", padding: "8px" }}>
+                <label style={{ display: "block", marginBottom: "5px", color: "var(--primary-gold)" }}>
+                  Theme
+                </label>
+                <select
+                  className="glass-card"
+                  style={{ background: "#111", color: "#fff", border: "none", padding: "8px" }}
+                >
                   <option>Elite Dark (Default)</option>
                   <option>Neon Night</option>
                 </select>
@@ -173,7 +190,6 @@ const App: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/" element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
   );
