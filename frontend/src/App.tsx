@@ -79,6 +79,10 @@ const Dashboard: React.FC = () => {
     getStocks();
   }, [activeTab, starredSymbols]);
 
+  useEffect(() => {
+    setSelectedStock(null);
+  }, [activeTab]);
+
   const handleStarClick = (symbol: string) => {
     setStarredSymbols(prev =>
       prev.includes(symbol) ? prev.filter(s => s !== symbol) : [...prev, symbol]
