@@ -104,8 +104,7 @@ def fetch_historical_data(symbol: str, interval: str = "1d"):
         data = []
         for index, row in hist.iterrows():
             if interval in ["5m", "15m", "1h"]:
-                naive_dt = index.replace(tzinfo=None)
-                item_time = int(calendar.timegm(naive_dt.timetuple()))
+                item_time = int(index.timestamp())
             else:
                 item_time = index.strftime("%Y-%m-%d")
                 
