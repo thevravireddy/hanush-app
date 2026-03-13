@@ -1,32 +1,47 @@
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import pool
 from alembic import context
 import os
+import sys
 
-# Import your models
-from backend.db import Base
-from backend.models import user  # import all models here
+# ✅ Make sure backend/ is on the path when running alembic from project root
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
-# Alembic Config
+from db import Base, DATABASE_URL
+from models import user  # ✅ import all models so Alembic can detect them
+
 config = context.config
-fileConfig(config.config_file_name)
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
 
+def get_url():
+    url = DATABASE_URL
+    # ✅ Render gives postgres://, SQLAlchemy needs postgresql://
+    if url and url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    return url
+
 def run_migrations_offline():
-    url = os.getenv("DATABASE_URL")
-    context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
+    context.configure(
+        url=get_url(),
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
     with context.begin_transaction():
         context.run_migrations()
 
 def run_migrations_online():
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    from sqlalchemy import create_engine
+    connectable = create_engine(get_url(), poolclass=pool.NullPool)
+
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+        )
         with context.begin_transaction():
             context.run_migrations()
 
